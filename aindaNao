@@ -1,0 +1,14 @@
+import pandas as pd 
+import polars as pl
+import os
+
+df_pandas = pd.read_excel("dados/originais")
+df_polars = pl.from_pandas(df_pandas)
+
+# processamento rápidos
+df_polars = df_polars.with_colunms(
+    pl.col("valor").cast(pl.Float64)
+)
+
+#volta se precisar salvar no banco
+df_final = df_polars.to_pandas()
