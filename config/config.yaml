@@ -1,0 +1,40 @@
+paths:
+  input: dados/originais/FUNDES/2026
+  output: dados/originais/Fundes/unificados
+
+
+excel:
+  nome_saida: tabela2026.xlsx
+
+# database:
+#   tabela_fato: fato_despesas
+#   tabelas_dimensoes:
+#     tempo: dim_tempo
+#     entidade: dim_entidade
+#     fornecedor: dim_fornecedor
+#     categoria: dim_categoria
+
+pipeline:
+  modo_carga: append   # append | replace | upsert
+  chunk_size: 1000     # performance em grandes volumes
+
+colunas:
+  data: data
+  entidade: entidade
+  fornecedor: fornecedor
+  categoria: categoria
+  valor: valor
+  descricao: descricao
+
+Processamento:
+  formatos_aceitos:
+    - ".html"
+    - ".xls"
+    - ".xlsx"
+    - ".csv"
+
+  deletar_apos_processamento: False
+
+  remover_duplicados: true
+
+  coluna_chave: "numero_contrato" #usardo para duplicação

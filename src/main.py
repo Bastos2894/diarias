@@ -1,17 +1,19 @@
 from src.extractSelenium import baixar_excel
-# from src.transform import tratar_arquivo
-# from src.load import salvar
+from utils.unificarPlanilhas import unificar_tudo
+
 
 # def executar_coleta():
-#     for ano in range(2025, 2026):
-#         for mes in range(1,3):
-#             caminho = baixar_excel(mes, ano, 17101, 14, 1)
+#     for ano in  (2026,):
+#         for mes in range (1,5):
+#             caminho = baixar_excel(mes, ano, 17601, 14, 2)
 
-#     if caminho:
-#         df = tratar_arquivo(caminho)
+#             if caminho is None:
+#                 print(f"Falha em {ano}-{mes:02}")
 
+# executar_coleta()
+
+# =========================
+# EXECUÇÃO
+# =========================
 if __name__ == "__main__":
-  baixar_excel(1, 2025, 17101, 14, 1)
-  baixar_excel(2, 2025, 17101, 14, 1)
-  
-
+    unificar_tudo()

@@ -29,7 +29,7 @@ def esperar_download(pasta, arquivos_antes, timeout=60):
 
 def baixar_excel(mes, ano, orgao, elemento, sub_elemento):
 
-    pasta = Path(f"dados/originais/{ano}")
+    pasta = Path(f"dados/originais/FUNDES/{ano}")
     pasta.mkdir(parents=True, exist_ok=True)
    
         
@@ -55,7 +55,7 @@ def baixar_excel(mes, ano, orgao, elemento, sub_elemento):
     time.sleep(3)
 
     # clica no botão
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 40)
     botao_dropdown = wait.until(
         EC.element_to_be_clickable((
             By.XPATH, "//button[contains(@class, 'dropdown-toggle')]"
