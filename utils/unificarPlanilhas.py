@@ -22,8 +22,15 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # =========================
 MAPA_MODELO = {
     "1": "diarias dentro do estado",
-    "2": "diarias fora do estado",
-    "3": "diarias internacionais"
+    "2": "diarias fora do estado"
+}
+
+# ========================
+# Nome e ID do orgão
+# ========================
+Mapa_orgao = {
+    "idorgao": 17101,
+    "nmorgao":"SEDEC"
 }
 
 # =========================
@@ -72,47 +79,65 @@ def extrair_mes(nome_arquivo: str):
 # FUNÇÃO PRINCIPAL
 # =========================
 def unificar_tudo():
-    arquivos = list(ENTRADA_DIR.rglob("*.xls*"))
-
-    if not arquivos:
-        print("Nenhum arquivo encontrado.")
-        return None
-
     dfs_validos = []
 
-    for arquivo in arquivos:
-        try:
-            tabelas = pd.read_html(arquivo)
+    ano_inicio = CONFIG["paths"]["Year_start"]
+    ano_fim = CONFIG["paths"]["Year_end"]
 
-            if not tabelas:
-                print(f"[IGNORADO] {arquivo.name}")
-                continue
+    for ano in range(ano_inicio, ano_fim + 1):
+        pasta_ano = ENTRADA_DIR / str(ano)
 
-            df = None
+        if not pasta_ano.exists():
+            print(f"[AVISO] Pasta não encontrada: {pasta_ano}")
+            continue
 
-            for tabela in tabelas:
-                if tabela_valida(tabela):
-                    df = tabela
-                    break
+        arquivos = list(pasta_ano.glob("*xls*"))
 
-            if df is None:
-                print(f"[VAZIO] {arquivo.name}")
-                continue
-            
-            # remove linhas duplicadas de cabeçalho
-            if "Nome do Servidor" in df.columns:
-                df = df[df["Nome do Servidor"] != "Nome do Servidor"]
+        print(f"\n📂 Processando ano: {ano} ({len(arquivos)} arquivos)")
 
-            # adiciona colunas
-            df["modelo"] = extrair_modelo(arquivo.name)
-            df["ano"] = arquivo.parent.name
-            df["mes"] = extrair_mes(arquivo.name)
+        for arquivo in arquivos:
+            try:
+                if arquivo.suffix.lower()  ==".xls":
+                    tabelas = pd.read_html(arquivo)
+                    if not tabelas:
+                        print(f"[IGNORADO] {arquivo.name}")
+                        continue
 
-            dfs_validos.append(df)
-            print(f"[OK] {arquivo.name}")
+                    df = None
+                    for tabela in tabelas:
+                        if tabela_valida(tabela):
+                            df = tabela
+                        break
+                elif arquivo.suffix.lower() == ".xlsx":
+                    df = pd.read_excel(arquivo)
 
-        except Exception as e:
-            print(f"[ERRO] {arquivo.name} -> {e}")
+                else:
+                    continue
+
+                if df is None or df.empty:
+                    print(f"[VAZIO] {arquivo.name}")
+                    continue
+
+                df.columns = df.columns.astype(str).str.strip()
+
+                # remove linhas duplicadas de cabeçalho
+                if "Nome do Servidor" in df.columns:
+                    df = df[df["Nome do Servidor"] != "Nome do Servidor"]
+
+                # adiciona colunas
+                df["modelo"] = extrair_modelo(arquivo.name)
+                df["ano"] = arquivo.parent.name
+                df["mes"] = extrair_mes(arquivo.name)
+
+                # adiciona colunas fixas
+                df["idorgao"] = Mapa_orgao["idorgao"]
+                df["nmorgao"] = Mapa_orgao["nmorgao"]
+
+                dfs_validos.append(df)
+                print(f"[OK] {arquivo.name}")
+
+            except Exception as e:
+                print(f"[ERRO] {arquivo.name} -> {e}")
             
     if not dfs_validos:
         print("Nenhuma tabela válida encontrada.")

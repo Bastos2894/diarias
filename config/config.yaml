@@ -1,10 +1,12 @@
 paths:
-  input: dados/originais/FUNDES/2026
-  output: dados/originais/Fundes/unificados
+  input: dados/originais/SEDEC
+  Year_start: 2015
+  Year_end: 2026
+  output: dados/originais/SEDEC
 
 
 excel:
-  nome_saida: tabela2026.xlsx
+  nome_saida: tabelasedec.xlsx
 
 # database:
 #   tabela_fato: fato_despesas
