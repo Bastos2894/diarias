@@ -7,6 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
 from pathlib import Path
+# Faz o download do excel usando Selenium, renomeia e salva na pasta correta
 
 def esperar_download(pasta, arquivos_antes, timeout=60):
     tempo_inicial = time.time()

@@ -1,32 +1,18 @@
 paths:
-  input: dados/originais/SEDEC
-  Year_start: 2015
-  Year_end: 2026
-  output: dados/originais/SEDEC
+  input: dados/processadas/tabela_fundes_cedec_pront.xlsx
+  output: dados/processadas
 
 
 excel:
-  nome_saida: tabelasedec.xlsx
+  nome_saida: tabela_fundes_cedec_pront.xlsx
 
-# database:
-#   tabela_fato: fato_despesas
-#   tabelas_dimensoes:
-#     tempo: dim_tempo
-#     entidade: dim_entidade
-#     fornecedor: dim_fornecedor
-#     categoria: dim_categoria
+
 
 pipeline:
   modo_carga: append   # append | replace | upsert
   chunk_size: 1000     # performance em grandes volumes
 
-colunas:
-  data: data
-  entidade: entidade
-  fornecedor: fornecedor
-  categoria: categoria
-  valor: valor
-  descricao: descricao
+
 
 Processamento:
   formatos_aceitos:
@@ -38,5 +24,3 @@ Processamento:
   deletar_apos_processamento: False
 
   remover_duplicados: true
-
-  coluna_chave: "numero_contrato" #usardo para duplicação

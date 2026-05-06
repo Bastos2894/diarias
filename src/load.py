@@ -1,26 +1,133 @@
-from sqlalchemy import create_engine
-import os
-from dotenv import load_dotenv
+# Script para ler o arquivo Excel, limpar os dados, exportar para CSV e inserir no banco de dados. O script também cria o schema no banco se ele não existir.
+import pandas as pd
+from pathlib import Path
 
-load_dotenv()
+from sqlalchemy import text
+from utils.db import _LOADget_engine
+from utils.config_loader import load_config
 
-def get_engine():
-    return create_engine(
-        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
-        f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+BASE_DIR = Path(__file__).resolve().parents[1]
+CONFIG_DB = load_config("config/database.yaml")
+CONFIG_APP = load_config("config/config.yaml")
+
+ENTRADA = BASE_DIR / CONFIG_APP["paths"]["input"]
+SAIDA = BASE_DIR / CONFIG_APP["paths"]["output"]
+def main():
+    ENGINE = _LOADget_engine()
+    SCHEMA = "diarias"
+
+    # =========================
+    # 1. LER DADOS
+    # =========================
+    df = pd.read_excel(ENTRADA)
+
+    # =========================
+    # 2. LIMPEZA
+    # =========================
+
+    # NOME DO SERVIDOR
+    df['nome_do_servidor'] = (
+        df['nome_do_servidor']
+        .fillna('')
+        .astype(str)
+        .str.strip()
+        .str.replace(r'\s+', ' ', regex=True)
+        .str.title()
     )
 
-def salvar(df_polars, tabela):
+    # TEXTOS
+    colunas_texto = [
+        'cargo', 'localidade', 'motivo', 'metas_previstas', 'resultados_obtidos', 'modelo', 'nmorgao'
+    ]
 
-    engine = get_engine()
+    for col in colunas_texto:
+        df[col] = (
+            df[col]
+            .fillna('')
+            .astype(str)
+            .str.strip()
+            .str.replace(r'\s+', ' ', regex=True)
+        )
 
-    df_pandas = df_polars.to_pandas()
+    # DATAS
+    colunas_datas = [
+        'data_de_liberacao', 'data_de_partida', 'data_de_retorno', 'prestacao_de_contas'
+    ]
 
-    df_pandas.to_sql(
-        tabela,
-        engine,
-        if_exists = "append",
-        index = False
+    for col in colunas_datas:
+        df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')
+
+
+    # NÚMERICOS
+    df['qtde_de_diarias'] = pd.to_numeric(df['qtde_de_diarias'], errors='coerce')
+    
+    def parse_moeda(col: pd.Series) -> pd.Series:
+        col = (
+            col.astype(str)
+            .str.strip()
+            .str.lower()
+            .replace(['nan', 'none', ''], None)
+        )
+
+        col = col.str.replace(r'[^\d,.-]', '', regex=True)
+        col = col.replace(['', '-', '.', ','], None)
+
+        # usa na=False sempre
+        if col.str.contains(',', na=False).any():
+            col = col.str.replace('.', '', regex=False)
+            col = col.str.replace(',', '.', regex=False)
+            return pd.to_numeric(col, errors='coerce')
+
+        return pd.to_numeric(col, errors='coerce') / 100
+
+    df['valor_das_diarias'] = parse_moeda(df['valor_das_diarias'])
+    # INTEIROS
+    df['ano'] = pd.to_numeric(df['ano'], errors='coerce').astype('Int64')
+    df['mes'] = pd.to_numeric(df['mes'], errors='coerce').astype('Int64')
+    df['idorgao'] =pd.to_numeric(df['idorgao'], errors='coerce').astype('Int64')
+
+    # COLUNA AUXILIAR
+
+    df['arquivo_origem'] = df['arquivo_origem'].astype(str)
+
+
+
+    df = df.drop_duplicates()
+
+    # =========================
+    # 4. EXPORTAR CSV
+    # =========================
+    df.to_csv(
+        SAIDA / "transparencia_final.csv",
+        index=False,
+        sep=';',
+        encoding='utf-8-sig'
+    )
+    # ========================
+    # 5. CRIA O SCHEMA SE NÃO EXISTIR
+    # =========================
+    with ENGINE.connect() as conn:
+        conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA};"))
+        conn.commit()
+
+
+    print(df.shape)
+    print(df.head())
+    # =========================
+    # 6. INSERT NO BANCO (UMA TABELA SÓ)
+    # =========================
+    df.to_sql(
+        "diarias",
+        ENGINE,
+        schema=SCHEMA,
+        if_exists="replace",  # ou "append" se quiser acumular
+        index=False,
+        method="multi",
+        chunksize=1000
     )
 
-    print(f"[OK] Dados salvos na tabela {tabela}.")
+    print("✅ Tabela única criada com sucesso")
+    print(df['valor_das_diarias'].isna().sum())
+
+if __name__ == "__main__":
+    main()

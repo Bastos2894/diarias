@@ -6,10 +6,9 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import polars as pl
 import pandas as pd
 
-from utils.style_planilhas import style_planilhas
-from utils.data_padrao import clean_dataframe
-from utils.config_loader import load_config
 
+from utils.padronizarDados import clean_dataframe
+from utils.config_loader import load_config
 # =========================
 # CONFIG
 # =========================
@@ -19,14 +18,11 @@ CONFIG = load_config()
 ENTRADA_DIR = BASE_DIR / CONFIG["paths"]["input"]
 OUTPUT_DIR = BASE_DIR / CONFIG["paths"]["output"]
 
-ENTIDADE = CONFIG["filtro"]["entidade"]
 
-PROCESSAMENTO = CONFIG["Processamento"]
 
-FORMATOS = [f.lower() for f in PROCESSAMENTO["formatos_aceitos"]]
-DELETAR = PROCESSAMENTO["deletar_apos_processamento"]
-REMOVER_DUPLICADOS = PROCESSAMENTO["remover_duplicados"]
-COLUNA_CHAVE = PROCESSAMENTO["coluna_chave"]
+
+
+
 
 NOME_SAIDA = CONFIG["excel"]["nome_saida"]
 ARQUIVO_SAIDA = OUTPUT_DIR / NOME_SAIDA
@@ -37,17 +33,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # FUNÇÕES
 # =========================
 
-def listar_arquivos():
-    arquivos = [
-        f for f in ENTRADA_DIR.iterdir()
-        if f.is_file() and f.suffix.lower() in FORMATOS
-    ]
 
-    if not arquivos:
-        print(f"Nenhum arquivo encontrado em: {ENTRADA_DIR}")
-
-    print(f"Arquivos encontrados: {len(arquivos)}")
-    return arquivos
 
 
 def ler_arquivo(caminho: Path) -> pl.DataFrame:
@@ -75,20 +61,13 @@ def ler_arquivo(caminho: Path) -> pl.DataFrame:
         raise RuntimeError(f"Erro ao ler arquivo {caminho.name}: {e}")
 
 
-def aplicar_filtro(df: pl.DataFrame) -> pl.DataFrame:
-    if ENTIDADE:
-        if "Entidade" not in df.columns:
-            raise ValueError("Coluna 'Entidade' não encontrada.")
 
-        df = df.filter(pl.col("Entidade") == ENTIDADE)
-
-    return df
 
 def processar_arquivo(caminho: Path) -> pl.DataFrame:
    
 
     df = ler_arquivo(caminho)
-    df = aplicar_filtro(df)
+    
     df = clean_dataframe(df)
 
     # 🔥 padroniza tipos 
@@ -113,7 +92,6 @@ def salvar_excel(df: pl.DataFrame):
     
     
     df.write_excel(ARQUIVO_SAIDA)
-    style_planilhas(ARQUIVO_SAIDA)
     print(f"Arquivo salvo em: {ARQUIVO_SAIDA}")
     print("Resumo final:")
     print(f"Linhas: {df.height}")
@@ -129,14 +107,13 @@ def main():
     print("🚀 SCRIPT INICIADO")
 
     print(f"Entrada: {ENTRADA_DIR.resolve()}")
-    print(f"Formatos: {FORMATOS}")
 
 
 
     if not ENTRADA_DIR.exists():
         raise FileNotFoundError(f"Pasta não encontrada: {ENTRADA_DIR}")
 
-    arquivos = listar_arquivos()
+    arquivos = list(ENTRADA_DIR.glob("*.*"))
     dfs = []
     
     arquivos_processados = []
@@ -158,22 +135,12 @@ def main():
         try:
             df_final = pl.concat(dfs, how="diagonal")
 
-            if REMOVER_DUPLICADOS:
-                if COLUNA_CHAVE in df_final.columns:
-                    df_final = df_final.unique(subset=[COLUNA_CHAVE])
+           
 
             salvar_excel(df_final)
 
             
-            if DELETAR:
-                for arquivo in arquivos_processados:
-                    arquivo.unlink()
-                    print(f"Arquivo deletado: {arquivo.name}")
-                
-                    if arquivo.suffix == ".py":
-                        print(f"⚠️ Ignorando arquivo Python: {arquivo.name}")
-                        continue
-                
+           
                 
 
         except Exception as e:
@@ -186,5 +153,4 @@ if __name__ == "__main__":
     main()
 
 print(ENTRADA_DIR.resolve())
-print(FORMATOS)
 print(list(ENTRADA_DIR.iterdir()))

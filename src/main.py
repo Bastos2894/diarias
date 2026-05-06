@@ -1,5 +1,8 @@
 from src.extractSelenium import baixar_excel
 from utils.unificarPlanilhas import unificar_tudo
+from utils.db import _LOADget_engine
+
+ENGINE = _LOADget_engine()
 
 
 # def executar_coleta():
@@ -15,5 +18,5 @@ from utils.unificarPlanilhas import unificar_tudo
 # =========================
 # EXECUÇÃO
 # =========================
-if __name__ == "__main__":
-    unificar_tudo()
+print(ENGINE)
+  
