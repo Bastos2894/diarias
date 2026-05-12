@@ -12,6 +12,8 @@ CONFIG_APP = load_config("config/config.yaml")
 
 ENTRADA = BASE_DIR / CONFIG_APP["paths"]["input"]
 SAIDA = BASE_DIR / CONFIG_APP["paths"]["output"]
+NOME_SAIDA = CONFIG_APP["CSV"]["nome_saida"]
+ARQUIVO_SAIDA = SAIDA / NOME_SAIDA
 def main():
     ENGINE = _LOADget_engine()
     SCHEMA = "diarias"
@@ -78,18 +80,16 @@ def main():
             col = col.str.replace(',', '.', regex=False)
             return pd.to_numeric(col, errors='coerce')
 
-        return pd.to_numeric(col, errors='coerce') / 100
+        return pd.to_numeric(col, errors='coerce')
 
     df['valor_das_diarias'] = parse_moeda(df['valor_das_diarias'])
     # INTEIROS
-    df['ano'] = pd.to_numeric(df['ano'], errors='coerce').astype('Int64')
-    df['mes'] = pd.to_numeric(df['mes'], errors='coerce').astype('Int64')
+   
     df['idorgao'] =pd.to_numeric(df['idorgao'], errors='coerce').astype('Int64')
 
     # COLUNA AUXILIAR
 
-    df['arquivo_origem'] = df['arquivo_origem'].astype(str)
-
+    
 
 
     df = df.drop_duplicates()
@@ -98,7 +98,7 @@ def main():
     # 4. EXPORTAR CSV
     # =========================
     df.to_csv(
-        SAIDA / "transparencia_final.csv",
+        ARQUIVO_SAIDA,
         index=False,
         sep=';',
         encoding='utf-8-sig'

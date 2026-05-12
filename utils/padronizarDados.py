@@ -1,64 +1,93 @@
-import polars as pl
+import pandas as pd
 import unicodedata
-# Padronmização de dados para facilitar análises e evitar problemas de encoding, acentos, etc.
 
+
+# =========================
+# REMOVE ACENTOS
+# =========================
 def _remove_acentos(texto: str) -> str:
+
     if texto is None:
         return texto
-    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+
+    return (
+        unicodedata
+        .normalize("NFKD", str(texto))
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
 
 
-def clean_column_names(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Padroniza nomes das colunas:
-    - remove acentos
-    - lowercase
-    - troca espaços por underscore
-    """
-    new_cols = [
+# =========================
+# PADRONIZA NOMES DE COLUNAS
+# =========================
+def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
+
+    df.columns = [
+
         _remove_acentos(col)
         .lower()
+        .strip()
         .replace(" ", "_")
         .replace(".", "")
         .replace("-", "_")
+
         for col in df.columns
     ]
-    return df.rename(dict(zip(df.columns, new_cols)))
+
+    return df
 
 
-def strip_string_columns(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Remove espaços extras nas colunas texto
-    """
-    return df.with_columns(
-        [
-            pl.col(col).str.strip_chars()
-            for col, dtype in zip(df.columns, df.dtypes)
-            if dtype == pl.Utf8
-        ]
-    )
+# =========================
+# REMOVE ESPAÇOS EXTRAS
+# =========================
+def strip_string_columns(df: pd.DataFrame) -> pd.DataFrame:
+
+    colunas_texto = df.select_dtypes(
+        include="object"
+    ).columns
+
+    for col in colunas_texto:
+
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.strip()
+        )
+
+    return df
 
 
-def fix_encoding(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Remove caracteres quebrados de encoding
-    """
-    return df.with_columns(
-        [
-            pl.col(col).map_elements(
-                lambda x: _remove_acentos(x) if isinstance(x, str) else x
-            )
-            for col, dtype in zip(df.columns, df.dtypes)
-            if dtype == pl.Utf8
-        ]
-    )
+# =========================
+# CORRIGE ENCODING
+# =========================
+def fix_encoding(df: pd.DataFrame) -> pd.DataFrame:
+
+    colunas_texto = df.select_dtypes(
+        include="object"
+    ).columns
+
+    for col in colunas_texto:
+
+        df[col] = df[col].apply(
+            lambda x:
+                _remove_acentos(x)
+                if isinstance(x, str)
+                else x
+        )
+
+    return df
 
 
-def clean_dataframe(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Pipeline completo de limpeza
-    """
+# =========================
+# PIPELINE COMPLETO
+# =========================
+def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+
     df = clean_column_names(df)
+
     df = strip_string_columns(df)
+
     df = fix_encoding(df)
+
     return df

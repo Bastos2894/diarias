@@ -1,12 +1,16 @@
 paths:
-  input: dados/processadas/tabela_fundes_cedec_pront.xlsx
+  input: dados/processadas/tabela_unificada.xlsx
   output: dados/processadas
 
+  years:
+    start : 2015
+    end : 2026
 
 excel:
-  nome_saida: tabela_fundes_cedec_pront.xlsx
+  nome_saida: tabela_processada.xlsx
 
-
+CSV:
+  nome_saida: diarias_final.csv
 
 pipeline:
   modo_carga: append   # append | replace | upsert

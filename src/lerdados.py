@@ -13,7 +13,7 @@ from utils.config_loader import load_config
 # CONFIG
 # =========================
 BASE_DIR = Path(__file__).resolve().parents[1]
-CONFIG = load_config()
+CONFIG = load_config("config/config.yaml")
 
 ENTRADA_DIR = BASE_DIR / CONFIG["paths"]["input"]
 OUTPUT_DIR = BASE_DIR / CONFIG["paths"]["output"]

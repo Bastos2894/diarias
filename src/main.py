@@ -1,8 +1,8 @@
-from src.extractSelenium import baixar_excel
-from utils.unificarPlanilhas import unificar_tudo
-from utils.db import _LOADget_engine
+# from src.extractSelenium import baixar_excel
+# from utils.unificarPlanilhas import unificar_tudo
+# from utils.db import _LOADget_engine
 
-ENGINE = _LOADget_engine()
+# ENGINE = _LOADget_engine()
 
 
 # def executar_coleta():
@@ -18,5 +18,6 @@ ENGINE = _LOADget_engine()
 # =========================
 # EXECUÇÃO
 # =========================
-print(ENGINE)
-  
+# print(ENGINE)
+x = int(5)
+print(type(x))

@@ -16,7 +16,7 @@ def esperar_download(pasta, arquivos_antes, timeout=60):
         arquivos_agora = set(pasta.glob("*.xls*"))
         novos = arquivos_agora - arquivos_antes
 
-        temporarios = list(pasta.glob("*.crdownload"))
+        temporarios = list(pasta.glob("*.crdownload")) #glob serve para pegar arquivos com extensão específica, nesse caso os temporários do Chrome
 
         if novos and not temporarios:
             return max(novos, key=os.path.getctime)
